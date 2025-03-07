@@ -8,57 +8,122 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
       body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-        background-color: #f8f9fa;
+        font-family: "Prompt", sans-serif;
+        background-color: #f4f7fc;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+        text-align: center;
       }
+
       h1,
       h2,
       h3 {
-        text-align: center;
+        color: #000000;
       }
+
       .container {
         display: flex;
-        justify-content: space-between;
+        flex-wrap: wrap;
+        justify-content: center;
         gap: 20px;
         margin-top: 20px;
       }
+
       .box {
         flex: 1;
         min-width: 450px;
         max-width: 48%;
         background: white;
-        border-radius: 10px;
-        padding: 15px;
-        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease-in-out;
       }
+
+      .box:hover {
+        transform: scale(1.02);
+      }
+
       .table-container {
         max-height: 400px;
-        overflow: auto;
+        overflow-y: auto;
+        border-radius: 10px;
         border: 1px solid #ddd;
+        background: white;
       }
+
       table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 10px;
+        font-size: 12px; /* ลดขนาดตัวอักษรในตาราง */
       }
+
       th,
       td {
-        border: 1px solid #ddd;
         padding: 8px;
         text-align: left;
+        border-bottom: 1px solid #ddd;
       }
+
       th {
         background: #007bff;
         color: white;
+        font-weight: bold;
       }
+
       tr:nth-child(even) {
         background: #f2f2f2;
       }
+
+      /* ปุ่มแต่ละสี */
       button {
-        margin-top: 10px;
-        padding: 5px 10px;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 8px;
         cursor: pointer;
+        font-size: 14px;
+        transition: background 0.3s, transform 0.2s;
+      }
+
+      button:hover {
+        transform: scale(1.05);
+      }
+
+      .upload-btn {
+        background: #28a745;
+      } /* ปุ่มอัปโหลด */
+      .clear-btn {
+        background: #dc3545;
+      } /* ปุ่มล้างข้อมูล */
+      .clear-left-btn {
+        background: #dc3545;
+      } /* ปุ่มล้างข้อมูลฝั่งซ้าย */
+      .clear-right-btn {
+        background: #dc3545;
+      } /* ปุ่มล้างข้อมูลฝั่งขวา */
+
+      input[type="file"],
+      input[type="text"] {
+        width: 80%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        font-size: 14px;
+        text-align: center;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          flex-direction: column;
+          align-items: center;
+        }
+        .box {
+          max-width: 90%;
+        }
       }
     </style>
   </head>
@@ -66,7 +131,8 @@
     <h1>เช็คสต๊อกตามหมวด</h1>
     <h2>อัปโหลดไฟล์ Excel</h2>
     <input type="file" id="uploadExcel" />
-    <button onclick="clearData()">ล้างข้อมูล</button>
+    <button class="upload-btn">อัปโหลด</button>
+    <button class="clear-btn" onclick="clearData()">ล้างข้อมูล</button>
     <h2>ยิง SN สินค้า</h2>
     <input
       type="text"
@@ -80,7 +146,9 @@
         <h3>
           📦 สินค้าที่มีอยู่ในคลัง (<span id="inventoryCount">0</span> รายการ)
         </h3>
-        <button onclick="clearInventoryData()">ล้างข้อมูลฝั่งซ้าย</button>
+        <button class="clear-left-btn" onclick="clearInventoryData()">
+          ล้างข้อมูลฝั่งซ้าย
+        </button>
         <div class="table-container">
           <table id="inventoryTable">
             <tr>
@@ -97,7 +165,9 @@
         <h3>
           📋 สินค้าที่ตรวจสอบแล้ว (<span id="scannedCount">0</span> รายการ)
         </h3>
-        <button onclick="clearScannedData()">ล้างข้อมูลฝั่งขวา</button>
+        <button class="clear-right-btn" onclick="clearScannedData()">
+          ล้างข้อมูลฝั่งขวา
+        </button>
         <div class="table-container">
           <table id="scannedTable">
             <tr>
@@ -161,6 +231,17 @@
       function handleScan(event) {
         if (event.key === "Enter") {
           let sn = event.target.value.trim();
+
+          // ตรวจสอบว่าค่า sn เป็นตัวเลขเท่านั้น
+          if (!/^\d+$/.test(sn)) {
+            Swal.fire("แจ้งเตือน!", "กรุณากรอกเฉพาะตัวเลขเท่านั้น!", "warning");
+            playSound(
+              "https://branch.advice.co.th/52000036/themes/home/audio/oh_no.mp3"
+            );
+            event.target.value = "";
+            return;
+          }
+
           let foundItem = inventory.find((item) => item.sn === sn);
           let isScanned = scannedItems.some((item) => item.sn === sn);
 
@@ -224,9 +305,16 @@
           row.insertCell(2).textContent = item.code;
           row.insertCell(3).textContent = item.product;
           row.insertCell(4).textContent = item.sn;
+
           let actionCell = row.insertCell(5);
           let deleteBtn = document.createElement("button");
           deleteBtn.textContent = "ลบ";
+          deleteBtn.style.background = "red"; // กำหนดให้ปุ่มเป็นสีแดง
+          deleteBtn.style.color = "white"; // ให้ตัวอักษรเป็นสีขาวเพื่อให้อ่านง่าย
+          deleteBtn.style.padding = "8px 12px"; // ปรับขนาดปุ่มให้เหมาะสม
+          deleteBtn.style.border = "none"; // เอาเส้นขอบออก
+          deleteBtn.style.borderRadius = "5px"; // ทำให้ปุ่มมีขอบมน
+          deleteBtn.style.cursor = "pointer"; // เปลี่ยนเป็น pointer เมื่อเมาส์ชี้
           deleteBtn.onclick = () => removeScannedItem(index);
           actionCell.appendChild(deleteBtn);
         });
