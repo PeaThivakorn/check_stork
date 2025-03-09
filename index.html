@@ -411,32 +411,6 @@
       localStorage.setItem("scannedItems", JSON.stringify(scannedItems));
     }
 
-    function saveToGoogleSheet() {
-      if (scannedItems.length === 0) {
-        Swal.fire("ไม่มีข้อมูล", "ไม่มีข้อมูลที่ต้องบันทึก!", "warning");
-        return;
-      }
-
-      fetch("https://script.google.com/macros/s/AKfycbzz5mqq9rPPXsgl3xCEiKfDPIbKWufr59eUFI4unFc1YlYGg-ME2Ubj520rbWfb984GPQ/exec", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(scannedItems),
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (data.status === "success") {
-            Swal.fire("บันทึกสำเร็จ!", "ข้อมูลถูกบันทึกลงใน Google Sheet แล้ว", "success");
-          } else {
-            Swal.fire("ผิดพลาด!", "ไม่สามารถบันทึกข้อมูลได้", "error");
-          }
-        })
-        .catch(error => {
-          console.error("Error:", error);
-          Swal.fire("เกิดข้อผิดพลาด", "โปรดตรวจสอบการเชื่อมต่อ", "error");
-        });
-    }
-
-
     function removeScannedItem(index) {
       Swal.fire({
         title: "ยืนยันการลบ?",
