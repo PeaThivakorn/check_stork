@@ -1,398 +1,483 @@
 <!DOCTYPE html>
 <html lang="th">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ตรวจสอบ SN สินค้า</title>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <style>
-      body {
-        font-family: "Prompt", sans-serif;
-        background-color: #f4f7fc;
-        color: #333;
-        margin: 0;
-        padding: 20px;
-        text-align: center;
-      }
 
-      h1,
-      h2,
-      h3 {
-        color: #000000;
-      }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ตรวจสอบ SN สินค้า</title>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      font-family: "Prompt", sans-serif;
+      background-color: #f4f7fc;
+      color: #333;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+    }
 
+    h1,
+    h2,
+    h3 {
+      color: #000000;
+    }
+
+    .container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .box {
+      flex: 1;
+      min-width: 450px;
+      max-width: 48%;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease-in-out;
+    }
+
+    .box:hover {
+      transform: scale(1.02);
+    }
+
+    .table-container {
+      max-height: 400px;
+      overflow-y: auto;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+      background: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 12px;
+      /* ลดขนาดตัวอักษรในตาราง */
+    }
+
+    th,
+    td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background: #007bff;
+      color: white;
+      font-weight: bold;
+    }
+
+    tr:nth-child(even) {
+      background: #f2f2f2;
+    }
+
+    /* ปุ่มแต่ละสี */
+    button {
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+    }
+
+    .upload-btn {
+      background: #28a745;
+    }
+
+    /* ปุ่มอัปโหลด */
+    .clear-btn {
+      background: #dc3545;
+    }
+
+    /* ปุ่มล้างข้อมูล */
+    .clear-left-btn {
+      background: #dc3545;
+    }
+
+    /* ปุ่มล้างข้อมูลฝั่งซ้าย */
+    .clear-right-btn {
+      background: #dc3545;
+    }
+
+    /* ปุ่มล้างข้อมูลฝั่งขวา */
+
+    input[type="file"],
+    input[type="text"] {
+      width: 80%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      text-align: center;
+    }
+
+    @media (max-width: 768px) {
       .container {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 20px;
-        margin-top: 20px;
+        flex-direction: column;
+        align-items: center;
       }
 
       .box {
-        flex: 1;
-        min-width: 450px;
-        max-width: 48%;
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s ease-in-out;
+        max-width: 90%;
       }
+    }
+  </style>
+</head>
 
-      .box:hover {
-        transform: scale(1.02);
-      }
+<body>
+  <h1>เช็คสต๊อกตามหมวด</h1>
+  <h2>อัปโหลดไฟล์ Excel</h2>
+  <input type="file" id="uploadExcel" />
+  <button class="upload-btn">อัปโหลด</button>
+  <button class="clear-btn" onclick="clearData()">ล้างข้อมูล</button>
+  <h2>ยิง SN สินค้า</h2>
+  <input type="text" id="scanSN" placeholder="กรอก SN แล้วกด Enter" onkeypress="handleScan(event)" />
 
-      .table-container {
-        max-height: 400px;
-        overflow-y: auto;
-        border-radius: 10px;
-        border: 1px solid #ddd;
-        background: white;
-      }
-
-      table {
-        width: 100%;
-        border-collapse: collapse;
-        margin-top: 10px;
-        font-size: 12px; /* ลดขนาดตัวอักษรในตาราง */
-      }
-
-      th,
-      td {
-        padding: 8px;
-        text-align: left;
-        border-bottom: 1px solid #ddd;
-      }
-
-      th {
-        background: #007bff;
-        color: white;
-        font-weight: bold;
-      }
-
-      tr:nth-child(even) {
-        background: #f2f2f2;
-      }
-
-      /* ปุ่มแต่ละสี */
-      button {
-        color: white;
-        border: none;
-        padding: 10px 15px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 14px;
-        transition: background 0.3s, transform 0.2s;
-      }
-
-      button:hover {
-        transform: scale(1.05);
-      }
-
-      .upload-btn {
-        background: #28a745;
-      } /* ปุ่มอัปโหลด */
-      .clear-btn {
-        background: #dc3545;
-      } /* ปุ่มล้างข้อมูล */
-      .clear-left-btn {
-        background: #dc3545;
-      } /* ปุ่มล้างข้อมูลฝั่งซ้าย */
-      .clear-right-btn {
-        background: #dc3545;
-      } /* ปุ่มล้างข้อมูลฝั่งขวา */
-
-      input[type="file"],
-      input[type="text"] {
-        width: 80%;
-        padding: 10px;
-        margin: 10px 0;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        font-size: 14px;
-        text-align: center;
-      }
-
-      @media (max-width: 768px) {
-        .container {
-          flex-direction: column;
-          align-items: center;
-        }
-        .box {
-          max-width: 90%;
-        }
-      }
-    </style>
-  </head>
-  <body>
-    <h1>เช็คสต๊อกตามหมวด</h1>
-    <h2>อัปโหลดไฟล์ Excel</h2>
-    <input type="file" id="uploadExcel" />
-    <button class="upload-btn">อัปโหลด</button>
-    <button class="clear-btn" onclick="clearData()">ล้างข้อมูล</button>
-    <h2>ยิง SN สินค้า</h2>
-    <input
-      type="text"
-      id="scanSN"
-      placeholder="กรอก SN แล้วกด Enter"
-      onkeypress="handleScan(event)"
-    />
-
-    <div class="container">
-      <div class="box">
-        <h3>
-          📦 สินค้าที่มีอยู่ในคลัง (<span id="inventoryCount">0</span> รายการ)
-        </h3>
-        <button class="clear-left-btn" onclick="clearInventoryData()">
-          ล้างข้อมูลฝั่งซ้าย
-        </button>
-        <div class="table-container">
-          <table id="inventoryTable">
-            <tr>
-              <th>NO</th>
-              <th>Itemtype</th>
-              <th>Code</th>
-              <th>Product</th>
-              <th>SN</th>
-            </tr>
-          </table>
-        </div>
-      </div>
-      <div class="box">
-        <h3>
-          📋 สินค้าที่ตรวจสอบแล้ว (<span id="scannedCount">0</span> รายการ)
-        </h3>
-        <button class="clear-right-btn" onclick="clearScannedData()">
-          ล้างข้อมูลฝั่งขวา
-        </button>
-        <div class="table-container">
-          <table id="scannedTable">
-            <tr>
-              <th>NO</th>
-              <th>Itemtype</th>
-              <th>Code</th>
-              <th>Product</th>
-              <th>SN</th>
-              <th>Action</th>
-            </tr>
-          </table>
-        </div>
+  <div class="container">
+    <div class="box">
+      <h3>
+        📦 สินค้าที่มีอยู่ในคลัง (<span id="inventoryCount">0</span> รายการ)
+      </h3>
+      <button class="clear-left-btn" onclick="clearInventoryData()">
+        ล้างข้อมูลฝั่งซ้าย
+      </button>
+      <div class="table-container">
+        <table id="inventoryTable">
+          <tr>
+            <th>NO</th>
+            <th>Itemtype</th>
+            <th>Code</th>
+            <th>Product</th>
+            <th>SN</th>
+          </tr>
+        </table>
       </div>
     </div>
+    <div class="box">
+      <h3>
+        📋 สินค้าที่ตรวจสอบแล้ว (<span id="scannedCount">0</span> รายการ)
+      </h3>
+      <button class="clear-right-btn" onclick="clearScannedData()">
+        ล้างข้อมูลฝั่งขวา
+      </button>
+      <div class="table-container">
+        <table id="scannedTable">
+          <tr>
+            <th>NO</th>
+            <th>Itemtype</th>
+            <th>Code</th>
+            <th>Product</th>
+            <th>SN</th>
+            <th>Action</th>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
 
-    <script>
-      let inventory = [];
-      let scannedItems = JSON.parse(localStorage.getItem("scannedItems")) || [];
+  <script>
+    let inventory = [];
+    let scannedItems = JSON.parse(localStorage.getItem("scannedItems")) || [];
 
-      function playSound(url) {
-        let audio = new Audio(url);
-        audio.play();
-      }
+    function playSound(url) {
+      let audio = new Audio(url);
+      audio.play();
+    }
 
-      document
-        .getElementById("uploadExcel")
-        .addEventListener("change", function (event) {
-          let file = event.target.files[0];
-          let reader = new FileReader();
-          reader.onload = function (e) {
-            let data = new Uint8Array(e.target.result);
-            let workbook = XLSX.read(data, { type: "array" });
-            let sheet = workbook.Sheets[workbook.SheetNames[0]];
-            let jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+    document.getElementById("uploadExcel").addEventListener("change", function (event) {
+      let file = event.target.files[0];
+      let reader = new FileReader();
+      reader.onload = function (e) {
+        let data = new Uint8Array(e.target.result);
+        let workbook = XLSX.read(data, { type: "array" });
+        let sheet = workbook.Sheets[workbook.SheetNames[0]];
+        let jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-            let headers = jsonData[1];
-            let dataRows = jsonData.slice(2);
+        let headers = jsonData[1];
+        let dataRows = jsonData.slice(2);
 
-            let existingSNs = new Set(inventory.map((item) => item.sn));
-            let newItems = dataRows
-              .map((row, index) => {
-                let sn = (row[headers.indexOf("Sn")] || "").toString().trim();
-                if (existingSNs.has(sn)) return null;
-                return {
-                  no: inventory.length + index + 1,
-                  itemtype: row[headers.indexOf("Itemtype")] || "-",
-                  code: row[headers.indexOf("Code")] || "-",
-                  product: row[headers.indexOf("Product")] || "-",
-                  sn: sn,
-                };
-              })
-              .filter((item) => item !== null);
+        let duplicateRows = [];
+        let addedRows = [];
 
-            inventory = inventory.concat(newItems);
-            updateTables();
-            document.getElementById("uploadExcel").value = "";
-          };
-          reader.readAsArrayBuffer(file);
-        });
+        let newItems = dataRows
+          .map((row, index) => {
+            let sn = (row[headers.indexOf("Sn")] || "").toString().trim();
 
-      function handleScan(event) {
-        if (event.key === "Enter") {
-          let sn = event.target.value.trim();
+            let foundInInventory = inventory.find(item => item.sn === sn);
+            let foundInScanned = scannedItems.find(item => item.sn === sn);
 
-          // ตรวจสอบว่าค่า sn เป็นตัวเลขเท่านั้น
-          if (!/^\d+$/.test(sn)) {
-            Swal.fire("แจ้งเตือน!", "กรุณากรอกเฉพาะตัวเลขเท่านั้น!", "warning");
-            playSound(
-              "https://branch.advice.co.th/52000036/themes/home/audio/oh_no.mp3"
-            );
-            event.target.value = "";
-            return;
-          }
+            if (foundInInventory || foundInScanned) {
+              let location = foundInInventory
+                ? `<span style="color: red; font-weight: bold;">คลังสินค้า</span>`
+                : `<span style="color: green; font-weight: bold;">รายการยิงแล้ว</span>`;
 
-          let foundItem = inventory.find((item) => item.sn === sn);
-          let isScanned = scannedItems.some((item) => item.sn === sn);
-
-          if (isScanned) {
-            Swal.fire("แจ้งเตือน!", `SN ${sn} ถูกยิงไปแล้ว!`, "warning");
-            playSound(
-              "https://branch.advice.co.th/52000036/themes/home/audio/Ctmelody.mp3"
-            );
-          } else if (!foundItem) {
-            Swal.fire("ผิดพลาด!", `ไม่พบ SN ${sn} ในคลัง!`, "error");
-            playSound(
-              "https://branch.advice.co.th/52000036/themes/home/audio/oh_no.mp3"
-            );
-          } else {
-            scannedItems.push(foundItem);
-            inventory = inventory.filter((item) => item.sn !== sn);
-
-            // ตรวจสอบว่ารหัสสินค้าของ SN นี้หมดจากคลังหรือยัง
-            let remainingItems = inventory.filter(
-              (item) => item.code === foundItem.code
-            );
-            if (remainingItems.length === 0) {
-              playSound(
-                "https://branch.advice.co.th/52000036/themes/home/audio/yahoo.mp3"
-              );
-            } else {
-              playSound(
-                "https://branch.advice.co.th/52000036/themes/home/audio/DING.mp3"
-              );
+              duplicateRows.push([
+                row[headers.indexOf("Itemtype")] || "-",
+                row[headers.indexOf("Code")] || "-",
+                row[headers.indexOf("Product")] || "-",
+                sn,
+                location
+              ]);
+              return null;
             }
 
-            updateTables();
-          }
-          event.target.value = "";
+            let newItem = {
+              no: inventory.length + index + 1,
+              itemtype: row[headers.indexOf("Itemtype")] || "-",
+              code: row[headers.indexOf("Code")] || "-",
+              product: row[headers.indexOf("Product")] || "-",
+              sn: sn,
+            };
+
+            addedRows.push([
+              newItem.itemtype,
+              newItem.code,
+              newItem.product,
+              newItem.sn,
+              `<span style="color: green; font-weight: bold;">เพิ่มสำเร็จ</span>`
+            ]);
+
+            return newItem;
+          })
+          .filter((item) => item !== null);
+
+        let messageHTML = "";
+
+        if (duplicateRows.length > 0) {
+          let duplicateTable = `
+        <h3 style="color: red;">🚨 รายการที่ซ้ำกัน</h3>
+        <table border="1" width="100%" style="border-collapse: collapse; text-align: center;">
+          <tr style="background-color: #ffcccc;">
+            <th>Itemtype</th>
+            <th>Code</th>
+            <th>Product</th>
+            <th>SN</th>
+            <th>สถานะ</th>
+          </tr>
+          ${duplicateRows.map(row => `<tr><td>${row.join("</td><td>")}</td></tr>`).join("")}
+        </table>
+        <br>
+      `;
+          messageHTML += duplicateTable;
+          playSound("https://branch.advice.co.th/52000036/themes/home/audio/oh_no.mp3");
         }
-      }
 
-      function updateTables() {
-        // เรียงลำดับใหม่ให้ inventory
-        inventory.forEach((item, index) => {
-          item.no = index + 1;
-        });
+        if (addedRows.length > 0) {
+          let addedTable = `
+        <h3 style="color: green;">✅ รายการที่เพิ่มเข้า</h3>
+        <table border="1" width="100%" style="border-collapse: collapse; text-align: center;">
+          <tr style="background-color: #ccffcc;">
+            <th>Itemtype</th>
+            <th>Code</th>
+            <th>Product</th>
+            <th>SN</th>
+            <th>สถานะ</th>
+          </tr>
+          ${addedRows.map(row => `<tr><td>${row.join("</td><td>")}</td></tr>`).join("")}
+        </table>
+      `;
+          messageHTML += addedTable;
+          playSound("https://branch.advice.co.th/52000036/themes/home/audio/yahoo.mp3");
+        }
 
-        let inventoryTable = document.getElementById("inventoryTable");
-        inventoryTable.innerHTML = `<tr><th>NO</th><th>Itemtype</th><th>Code</th><th>Product</th><th>SN</th></tr>`;
-        inventory.forEach((item) => {
-          let row = inventoryTable.insertRow();
-          row.insertCell(0).textContent = item.no;
-          row.insertCell(1).textContent = item.itemtype;
-          row.insertCell(2).textContent = item.code;
-          row.insertCell(3).textContent = item.product;
-          row.insertCell(4).textContent = item.sn;
-        });
+        if (messageHTML !== "") {
+          Swal.fire({
+            title: "ผลการอัปโหลดไฟล์",
+            html: messageHTML,
+            icon: "info",
+            width: 700,
+          });
+        }
 
-        let scannedTable = document.getElementById("scannedTable");
-        scannedTable.innerHTML = `<tr><th>NO</th><th>Itemtype</th><th>Code</th><th>Product</th><th>SN</th><th>Action</th></tr>`;
-        scannedItems.forEach((item, index) => {
-          let row = scannedTable.insertRow();
-          row.insertCell(0).textContent = index + 1;
-          row.insertCell(1).textContent = item.itemtype;
-          row.insertCell(2).textContent = item.code;
-          row.insertCell(3).textContent = item.product;
-          row.insertCell(4).textContent = item.sn;
+        inventory = inventory.concat(newItems);
+        updateTables();
+        document.getElementById("uploadExcel").value = "";
+      };
+      reader.readAsArrayBuffer(file);
+    });
 
-          let actionCell = row.insertCell(5);
-          let deleteBtn = document.createElement("button");
-          deleteBtn.textContent = "ลบ";
-          deleteBtn.style.background = "red"; // กำหนดให้ปุ่มเป็นสีแดง
-          deleteBtn.style.color = "white"; // ให้ตัวอักษรเป็นสีขาวเพื่อให้อ่านง่าย
-          deleteBtn.style.padding = "8px 12px"; // ปรับขนาดปุ่มให้เหมาะสม
-          deleteBtn.style.border = "none"; // เอาเส้นขอบออก
-          deleteBtn.style.borderRadius = "5px"; // ทำให้ปุ่มมีขอบมน
-          deleteBtn.style.cursor = "pointer"; // เปลี่ยนเป็น pointer เมื่อเมาส์ชี้
-          deleteBtn.onclick = () => removeScannedItem(index);
-          actionCell.appendChild(deleteBtn);
-        });
 
-        document.getElementById("inventoryCount").textContent =
-          inventory.length;
-        document.getElementById("scannedCount").textContent =
-          scannedItems.length;
-        localStorage.setItem("scannedItems", JSON.stringify(scannedItems));
-      }
+    function handleScan(event) {
+      if (event.key === "Enter") {
+        let sn = event.target.value.trim();
 
-      function removeScannedItem(index) {
-        Swal.fire({
-          title: "ยืนยันการลบ?",
-          text: "คุณต้องการลบ SN นี้และย้ายกลับไปยังคลังใช่หรือไม่?",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#d33",
-          cancelButtonColor: "#3085d6",
-          confirmButtonText: "ใช่, ลบเลย!",
-          cancelButtonText: "ยกเลิก",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            let removedItem = scannedItems.splice(index, 1)[0]; // นำสินค้าที่ถูกลบออก
-            inventory.push(removedItem); // เพิ่มกลับไปในคลัง
-            updateTables();
-            localStorage.setItem("scannedItems", JSON.stringify(scannedItems));
-            Swal.fire("ลบแล้ว!", "SN ได้ถูกย้ายกลับไปยังคลัง.", "success");
-          }
-        });
-      }
+        // ตรวจสอบว่าค่า sn เป็นตัวเลขเท่านั้น
+        if (!/^\d+$/.test(sn)) {
+          Swal.fire("แจ้งเตือน!", "กรุณากรอกเฉพาะตัวเลขเท่านั้น!", "warning");
+          playSound(
+            "https://branch.advice.co.th/52000036/themes/home/audio/oh_no.mp3"
+          );
+          event.target.value = "";
+          return;
+        }
 
-      function clearScannedData() {
-        Swal.fire({
-          title: "ยืนยันการล้างข้อมูล?",
-          text: "คุณต้องการล้างรายการที่ตรวจสอบแล้วทั้งหมดหรือไม่?",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#d33",
-          cancelButtonColor: "#3085d6",
-          confirmButtonText: "ใช่, ล้างเลย!",
-          cancelButtonText: "ยกเลิก",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            scannedItems = []; // เคลียร์รายการที่ตรวจสอบแล้ว
-            updateTables(); // อัปเดตตาราง
-            localStorage.removeItem("scannedItems"); // ลบข้อมูลจาก localStorage
-            Swal.fire(
-              "ล้างแล้ว!",
-              "รายการที่ตรวจสอบแล้วถูกล้างทั้งหมด.",
-              "success"
+        let foundItem = inventory.find((item) => item.sn === sn);
+        let isScanned = scannedItems.some((item) => item.sn === sn);
+
+        if (isScanned) {
+          Swal.fire("แจ้งเตือน!", `SN ${sn} ถูกยิงไปแล้ว!`, "warning");
+          playSound(
+            "https://branch.advice.co.th/52000036/themes/home/audio/Ctmelody.mp3"
+          );
+        } else if (!foundItem) {
+          Swal.fire("ผิดพลาด!", `ไม่พบ SN ${sn} ในคลัง!`, "error");
+          playSound(
+            "https://branch.advice.co.th/52000036/themes/home/audio/oh_no.mp3"
+          );
+        } else {
+          scannedItems.push(foundItem);
+          inventory = inventory.filter((item) => item.sn !== sn);
+
+          // ตรวจสอบว่ารหัสสินค้าของ SN นี้หมดจากคลังหรือยัง
+          let remainingItems = inventory.filter(
+            (item) => item.code === foundItem.code
+          );
+          if (remainingItems.length === 0) {
+            playSound(
+              "https://branch.advice.co.th/52000036/themes/home/audio/yahoo.mp3"
+            );
+          } else {
+            playSound(
+              "https://branch.advice.co.th/52000036/themes/home/audio/DING.mp3"
             );
           }
-        });
-      }
 
-      function clearInventoryData() {
-        Swal.fire({
-          title: "ยืนยันการล้างข้อมูล?",
-          text: "คุณต้องการล้างรายการสินค้าคลังทั้งหมดหรือไม่?",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#d33",
-          cancelButtonColor: "#3085d6",
-          confirmButtonText: "ใช่, ล้างเลย!",
-          cancelButtonText: "ยกเลิก",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            inventory = []; // ล้างข้อมูลฝั่งคลังสินค้า
-            updateTables(); // อัปเดตตาราง
-            Swal.fire(
-              "ล้างแล้ว!",
-              "รายการสินค้าคลังถูกล้างทั้งหมด.",
-              "success"
-            );
-          }
-        });
+          updateTables();
+        }
+        event.target.value = "";
       }
-    </script>
-  </body>
+    }
+
+    function updateTables() {
+      // เรียงลำดับใหม่ให้ inventory
+      inventory.forEach((item, index) => {
+        item.no = index + 1;
+      });
+
+      let inventoryTable = document.getElementById("inventoryTable");
+      inventoryTable.innerHTML = `<tr><th>NO</th><th>Itemtype</th><th>Code</th><th>Product</th><th>SN</th></tr>`;
+      inventory.forEach((item) => {
+        let row = inventoryTable.insertRow();
+        row.insertCell(0).textContent = item.no;
+        row.insertCell(1).textContent = item.itemtype;
+        row.insertCell(2).textContent = item.code;
+        row.insertCell(3).textContent = item.product;
+        row.insertCell(4).textContent = item.sn;
+      });
+
+      let scannedTable = document.getElementById("scannedTable");
+      scannedTable.innerHTML = `<tr><th>NO</th><th>Itemtype</th><th>Code</th><th>Product</th><th>SN</th><th>Action</th></tr>`;
+      scannedItems.forEach((item, index) => {
+        let row = scannedTable.insertRow();
+        row.insertCell(0).textContent = index + 1;
+        row.insertCell(1).textContent = item.itemtype;
+        row.insertCell(2).textContent = item.code;
+        row.insertCell(3).textContent = item.product;
+        row.insertCell(4).textContent = item.sn;
+
+        let actionCell = row.insertCell(5);
+        let deleteBtn = document.createElement("button");
+        deleteBtn.textContent = "ลบ";
+        deleteBtn.style.background = "red"; // กำหนดให้ปุ่มเป็นสีแดง
+        deleteBtn.style.color = "white"; // ให้ตัวอักษรเป็นสีขาวเพื่อให้อ่านง่าย
+        deleteBtn.style.padding = "8px 12px"; // ปรับขนาดปุ่มให้เหมาะสม
+        deleteBtn.style.border = "none"; // เอาเส้นขอบออก
+        deleteBtn.style.borderRadius = "5px"; // ทำให้ปุ่มมีขอบมน
+        deleteBtn.style.cursor = "pointer"; // เปลี่ยนเป็น pointer เมื่อเมาส์ชี้
+        deleteBtn.onclick = () => removeScannedItem(index);
+        actionCell.appendChild(deleteBtn);
+      });
+
+      document.getElementById("inventoryCount").textContent =
+        inventory.length;
+      document.getElementById("scannedCount").textContent =
+        scannedItems.length;
+      localStorage.setItem("scannedItems", JSON.stringify(scannedItems));
+    }
+
+    function removeScannedItem(index) {
+      Swal.fire({
+        title: "ยืนยันการลบ?",
+        text: "คุณต้องการลบ SN นี้และย้ายกลับไปยังคลังใช่หรือไม่?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "ใช่, ลบเลย!",
+        cancelButtonText: "ยกเลิก",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          let removedItem = scannedItems.splice(index, 1)[0]; // นำสินค้าที่ถูกลบออก
+          inventory.push(removedItem); // เพิ่มกลับไปในคลัง
+          updateTables();
+          localStorage.setItem("scannedItems", JSON.stringify(scannedItems));
+          Swal.fire("ลบแล้ว!", "SN ได้ถูกย้ายกลับไปยังคลัง.", "success");
+        }
+      });
+    }
+
+    function clearScannedData() {
+      Swal.fire({
+        title: "ยืนยันการล้างข้อมูล?",
+        text: "คุณต้องการล้างรายการที่ตรวจสอบแล้วทั้งหมดหรือไม่?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "ใช่, ล้างเลย!",
+        cancelButtonText: "ยกเลิก",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          scannedItems = []; // เคลียร์รายการที่ตรวจสอบแล้ว
+          updateTables(); // อัปเดตตาราง
+          localStorage.removeItem("scannedItems"); // ลบข้อมูลจาก localStorage
+          Swal.fire(
+            "ล้างแล้ว!",
+            "รายการที่ตรวจสอบแล้วถูกล้างทั้งหมด.",
+            "success"
+          );
+        }
+      });
+    }
+
+    function clearInventoryData() {
+      Swal.fire({
+        title: "ยืนยันการล้างข้อมูล?",
+        text: "คุณต้องการล้างรายการสินค้าคลังทั้งหมดหรือไม่?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#d33",
+        cancelButtonColor: "#3085d6",
+        confirmButtonText: "ใช่, ล้างเลย!",
+        cancelButtonText: "ยกเลิก",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          inventory = []; // ล้างข้อมูลฝั่งคลังสินค้า
+          updateTables(); // อัปเดตตาราง
+          Swal.fire(
+            "ล้างแล้ว!",
+            "รายการสินค้าคลังถูกล้างทั้งหมด.",
+            "success"
+          );
+        }
+      });
+    }
+  </script>
+</body>
+
 </html>
